@@ -2,11 +2,11 @@
 const bosses = new Map<string, any>([
     {
         name: 'Kazzak',
-        lastKilled: 1574140920
+        lastKilled: 1574358600
     },
     {
         name: 'Azuregos',
-        lastKilled: 1574313720	
+        lastKilled: 1574355600	
     }
 ].map(b => [b.name, b]));
 
