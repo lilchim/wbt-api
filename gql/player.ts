@@ -3,23 +3,24 @@ import { gql } from "apollo-server";
 const typeDefs = gql`
     # Player Type Definition 
     type Player {
+        id: ID
         name: String
         role: ROLE
         guild: String
         discordTag: String
-        class: PLAYERCLASS
+        characterClass: CHARACTER_CLASS
         scouting: Boss
         scoutingSince: Float
     }
 
     input PlayerInput {
         name: String!
-        guild: String!
-        class: PLAYERCLASS!
+        token: String!
+        characterClass: CHARACTER_CLASS!
         discordTag: String
     }
 
-    enum PLAYERCLASS {
+    enum CHARACTER_CLASS {
         MAGE
         WARRIOR
         PALADIN
@@ -31,8 +32,8 @@ const typeDefs = gql`
     }
 
     enum ROLE {
-        CLIQUE
-        FODDER
+        MEMBER
+        OFFICER
     }
 
     extend type Boss {
@@ -45,7 +46,7 @@ const typeDefs = gql`
     }
 
     extend type Mutation {
-        authorizeUser(token: String): Player
+        authorizeUser(token: String): Boolean
         registerPlayer(player: PlayerInput): Player
         startScouting(name: String, bossName: String, startTime: Float): Boss
         stopScouting(name: String): Player
@@ -55,15 +56,15 @@ const typeDefs = gql`
 const resolvers = {
     Query: {
         players (_, args, context) {
-            return context.Players.getPlayers();
+            return context.Players.getAll();
         },
         player(_, args, context) {
-            return context.Players.getPlayer(args);
+            return context.Players.getById(args);
         }
     },
     Player: {
         scouting(player, args, context) {
-            let currentlyScouting = context.Players.getPlayer(player).scouting;
+            let currentlyScouting = context.Players.getById(player).scouting;
             if (currentlyScouting) {
                 return context.Bosses.getBoss(currentlyScouting);
             }

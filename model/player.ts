@@ -3,8 +3,10 @@ import {clique, authKeys } from '../settings';
 const players = new Map<string, any>();
 
 export interface Player {
+    id: string;
     name: string;
-    class: string;
+    characterClass: string;
+    token: string;
     role: string;
     scouting: string;
     scoutingSince: number;
@@ -15,25 +17,27 @@ export interface Player {
 export const generatePlayerModel = ({req}) => ({
     authorizeUser: ({token}) => {
         let guild = authKeys.get(token);
-        if(guild) {
-            return {
-                guild: guild
-            }
-        }
-        return undefined;
+        return guild ? true : false;
     },
-    registerPlayer: (player: Player) => {
+    registerPlayer: ({name, characterClass, token}) => {
+        let player = {
+            id: Math.floor(Math.random() * 100).toString(),
+            name: name,
+            characterClass: characterClass,
+            token: token,
+            guild: authKeys.get(token).guild
+        }
         console.log(player);
-        players.set(player.name, player);
-        return players.get(player.name);
+        players.set(player.id, player);
+        return players.get(player.id);
     },
-    getPlayer: ({name}) => players.get(name),
-    getPlayers: () => Array.from(players.values()),
-    getRole: ({name}) => {
-        if(clique.indexOf(name) > -1) {
-            return 'CLIQUE'
-        }
-        return 'FODDER';
+    getById: ({id}) => players.get(id),
+    getAll: () => Array.from(players.values()),
+    getRole: ({id}) => {
+        let p = players.get(id);
+        console.log('Finding role for ', p);
+        let auth = authKeys.get(p.token);
+        return auth.role
     },
     startScouting: ({name, bossName, startTime}) => {
         console.log(name);
