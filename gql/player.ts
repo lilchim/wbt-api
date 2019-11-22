@@ -9,6 +9,7 @@ const typeDefs = gql`
         discordTag: String
         class: PLAYERCLASS
         scouting: Boss
+        scoutingSince: Float
     }
 
     input PlayerInput {
@@ -46,7 +47,7 @@ const typeDefs = gql`
     extend type Mutation {
         authorizeUser(token: String): Player
         registerPlayer(player: PlayerInput): Player
-        startScouting(name: String, bossName: String): Player
+        startScouting(name: String, bossName: String, startTime: Float): Boss
         stopScouting(name: String): Player
     }
 `;
@@ -73,8 +74,8 @@ const resolvers = {
         }
     },
     Boss: {
-        scouts(_, args, context) {
-            return context.Players.getScouts(args);
+        scouts(boss, args, context) {
+            return context.Players.getScouts(boss);
         }
     },
     Mutation: {
@@ -85,7 +86,8 @@ const resolvers = {
             return context.Players.registerPlayer(args.player);
         },
         startScouting(_, args, context) {
-            return context.Players.startScouting(args);
+            context.Players.startScouting(args);
+            return context.Bosses.getBoss(args.bossName);
         },
         stopScouting(_, args, context) {
             return context.Players.stopScouting(args);

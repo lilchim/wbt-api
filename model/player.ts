@@ -7,6 +7,7 @@ export interface Player {
     class: string;
     role: string;
     scouting: string;
+    scoutingSince: number;
     guild: string;
     discordTag: string;
 }
@@ -34,9 +35,13 @@ export const generatePlayerModel = ({req}) => ({
         }
         return 'FODDER';
     },
-    startScouting: ({name, bossName}) => {
+    startScouting: ({name, bossName, startTime}) => {
+        console.log(name);
         let p = players.get(name);
+        console.log('toggling scouting for p', p);
+
         p.scouting = bossName;
+        p.scoutingSince = startTime;
         return p;
     },
     stopScouting: ({name}) => {
@@ -44,9 +49,15 @@ export const generatePlayerModel = ({req}) => ({
         p.scouting = undefined;
         return p;
     },
-    getScouts: ({bossName}) => {
+    getScouts: ({name}) => {
         const allPlayers = Array.from(players.values());
-        return allPlayers.filter(p => { return p.scouting === bossName})
+        console.log(allPlayers);
+        let res= allPlayers.filter(p => { 
+            console.log(p.scouting);
+            console.log(name);
+            return p.scouting === name})
+        console.log(res);
+        return res;
     },
 
 })
