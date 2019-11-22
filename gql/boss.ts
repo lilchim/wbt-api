@@ -65,7 +65,8 @@ const resolvers = {
     },
     Mutation: {
         reportKill(_: any, args: any, context: any) {
-            context.Bosses.reportKill(args.name, args.killedOn);
+            console.log(`reporting kill`, args);
+            context.Bosses.reportKill(args);
             return context.Bosses.getBoss(args.name);
         }
     }

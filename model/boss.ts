@@ -20,7 +20,7 @@ export interface Boss {
 export const generateBossModel = ({ req }) => ({
     getBoss: (name) => { return bosses.get(name)},
     getBosses: () => { return Array.from(bosses.values())},
-    reportKill: (name, killedOn) => {
+    reportKill: ({name, killedOn}) => {
         let boss = bosses.get(name);
         boss.lastKilled = killedOn;
         return boss;
