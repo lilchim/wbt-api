@@ -36,6 +36,11 @@ const typeDefs = gql`
         OFFICER
     }
 
+    type AuthResult {
+        success: Boolean
+        guild: String
+    }
+
     extend type Boss {
         scouts: [Player]
     }
@@ -46,7 +51,7 @@ const typeDefs = gql`
     }
 
     extend type Mutation {
-        authorizeUser(token: String): Boolean
+        authorizeUser(token: String): AuthResult
         registerPlayer(player: PlayerInput): Player
         startScouting(name: String, bossName: String, startTime: Float): Boss
         stopScouting(name: String): Player

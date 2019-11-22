@@ -1,3 +1,13 @@
+export const WINDOW_DURATIONS_SECONDS = {
+    serverResetOpen: 12 * 60 * 60,
+    serverResetDuration: 30 * 60 * 60,
+    windowOpen: 24 * 60 * 60,
+    windowDuration: 72 * 60 * 60,
+}
+
+console.log(WINDOW_DURATIONS_SECONDS);
+
+
 enum Roles {
     OFFICER = 'OFFICER',
     MEMBER = 'MEMBER'

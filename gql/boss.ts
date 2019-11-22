@@ -1,5 +1,6 @@
 import { gql } from 'apollo-server';
-import { addHours } from '../util';
+import { addHours, UTCTimestampSeconds } from '../util';
+import { WINDOW_DURATIONS_SECONDS } from '../settings';
 
 const typeDefs = gql`
     # Boss Type Definition
@@ -8,6 +9,7 @@ const typeDefs = gql`
         name: String
         window: SpawnWindow
         lastKilled: Float
+        alive: Boolean
     }
 
     type SpawnWindow {
@@ -38,9 +40,6 @@ const resolvers = {
         }
     },
     Boss: {
-        lastKilled(parent) {
-            return new Date(parent.lastKilled * 1000).getTime();
-        },
         window(boss: any, args: any, context: any) {
             let b = context.Bosses.getBoss(boss.name);
             let serverResetUTC = context.Server.lastReset();
@@ -50,15 +49,18 @@ const resolvers = {
             let lastKill = new Date(b.lastKilled * 1000);
             console.log('last killed: ', lastKill);
 
-            let windowOpen = addHours(lastKill, 24)
-            let windowCloses = addHours(windowOpen, 72);
+            // let windowOpen = addHours(lastKill, 24)
+            // let windowCloses = addHours(windowOpen, 72);
+
+            let windowOpen = b.lastKilled + WINDOW_DURATIONS_SECONDS.windowOpen;
+            let windowCloses = b.lastKilled + WINDOW_DURATIONS_SECONDS.windowDuration;
 
             console.log('window opens: ', windowOpen);
             console.log('window closes: ', windowCloses);
             return {
-                open: Date.now() > windowOpen.getTime(),
-                opensOn: windowOpen.getTime(),
-                openUntil: windowCloses.getTime(),
+                open: UTCTimestampSeconds() > windowOpen,
+                opensOn: windowOpen,
+                openUntil: windowCloses,
                 fromRestart: false
             }
         }
@@ -74,15 +76,21 @@ const resolvers = {
 
 export const schema = { typeDefs, resolvers }
 
-const useServerResetWindow = (boss, serverResetUTC) => {
+const useServerResetWindow = (boss, serverResetTimestamp) => {
     console.log('Server Restart detected. Adjusting spawn window');
-    let resetDate = new Date(serverResetUTC);
-    let windowOpen = addHours(resetDate, 15);
-    let windowCloses = addHours(resetDate, 30);
+    let resetDate = new Date(serverResetTimestamp * 1000);
+    // let windowOpen = addHours(resetDate, 15);
+    // let windowCloses = addHours(resetDate, 30);
+
+    let windowOpen = serverResetTimestamp + WINDOW_DURATIONS_SECONDS.serverResetOpen;
+    let windowCloses = serverResetTimestamp + WINDOW_DURATIONS_SECONDS.serverResetDuration;
+
+    console.log('window opens:', windowOpen);
+    console.log('window closes:', windowCloses);
     return {
-        open: Date.now() > windowOpen.getTime(),
-        opensOn: windowOpen.getTime(),
-        openUntil: windowCloses.getTime(),
+        open: UTCTimestampSeconds() > windowOpen,
+        opensOn: windowOpen,
+        openUntil: windowCloses,
         fromRestart: true
     }
 }
