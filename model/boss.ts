@@ -25,9 +25,18 @@ export interface Boss {
 export const generateBossModel = ({ req }) => ({
     getBoss: (name) => { return bosses.get(name)},
     getBosses: () => { return Array.from(bosses.values())},
+    spawnBoss: ({name}) => {
+        let boss =bosses.get(name);
+        boss.alive = true;
+        return boss;
+    },
     reportKill: ({name, killedOn}) => {
         let boss = bosses.get(name);
         boss.lastKilled = killedOn;
+        boss.alive = false;
         return boss;
+    },
+    killAll: () => {
+        bosses.forEach(boss => boss.alive = false);
     }
 });

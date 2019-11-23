@@ -8,7 +8,7 @@ export const WINDOW_DURATIONS_SECONDS = {
 console.log(WINDOW_DURATIONS_SECONDS);
 
 
-enum Roles {
+export enum Roles {
     OFFICER = 'OFFICER',
     MEMBER = 'MEMBER'
 }
@@ -37,7 +37,7 @@ export const authKeys = new Map<string, any>([
 ].map(a => [a.token, a]))
 
 
-export const clique = [
+export const officers = [
     'Goshu',
     'Manlet',
     'Infamy',
@@ -46,4 +46,4 @@ export const clique = [
     'Sypha',
 ] 
 
-export default { authKeys, clique }
+export default { authKeys, officers, Roles }

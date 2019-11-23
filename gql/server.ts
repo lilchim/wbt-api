@@ -13,6 +13,7 @@ const resolvers = {
     Mutation: {
         logServerReset(_, args, context) {
             context.Server.logServerReset(args.time);
+            context.Bosses.killAll();
             return context.Server.lastReset();
         }
     }

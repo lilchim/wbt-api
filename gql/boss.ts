@@ -32,7 +32,6 @@ const typeDefs = gql`
 const resolvers = {
     Query: {
         boss(_: any, args: any, context: any) {
-            console.log('get boss', args.name)
             return context.Bosses.getBoss(args.name);
         },
         bosses(_, args, context) {

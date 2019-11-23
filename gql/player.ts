@@ -5,7 +5,6 @@ const typeDefs = gql`
     type Player {
         id: ID
         name: String
-        role: ROLE
         guild: String
         discordTag: String
         characterClass: CHARACTER_CLASS
@@ -14,8 +13,9 @@ const typeDefs = gql`
     }
 
     input PlayerInput {
+        id: ID!
         name: String!
-        token: String!
+        guild: String!
         characterClass: CHARACTER_CLASS!
         discordTag: String
     }
@@ -31,29 +31,19 @@ const typeDefs = gql`
         WARLOCK
     }
 
-    enum ROLE {
-        MEMBER
-        OFFICER
-    }
-
-    type AuthResult {
-        success: Boolean
-        guild: String
-    }
-
     extend type Boss {
         scouts: [Player]
     }
 
     extend type Query {
         players: [Player]
-        player(name: String): Player
+        player(id: ID): Player
     }
 
     extend type Mutation {
-        authorizeUser(token: String): AuthResult
-        registerPlayer(player: PlayerInput): Player
-        startScouting(name: String, bossName: String, startTime: Float): Boss
+        # registerPlayer(player: PlayerInput): Player
+        updatePlayerInfo(player: PlayerInput): Player
+        startScouting(id: ID!, bossName: String!, startTime: Float!): Boss
         stopScouting(name: String): Player
     }
 `;
@@ -64,6 +54,7 @@ const resolvers = {
             return context.Players.getAll();
         },
         player(_, args, context) {
+            console.log('getting player', args);
             return context.Players.getById(args);
         }
     },
@@ -85,11 +76,13 @@ const resolvers = {
         }
     },
     Mutation: {
-        authorizeUser(_, args, context) {
-            return context.Players.authorizeUser(args);
-        },
-        registerPlayer(_, args, context) {
-            return context.Players.registerPlayer(args.player);
+        // registerPlayer(_, args, context) {
+        //     // return context.Players.registerPlayer(args.player);
+        //     return context.Players.updatePlayerInfo(args.player);
+
+        // },
+        updatePlayerInfo(_, args, context) {
+            return context.Players.updatePlayerInfo(args.player);
         },
         startScouting(_, args, context) {
             context.Players.startScouting(args);

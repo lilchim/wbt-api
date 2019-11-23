@@ -1,4 +1,3 @@
-import { clique, authKeys } from '../settings';
 
 const players = new Map<string, any>();
 
@@ -15,34 +14,24 @@ export interface Player {
 }
 
 export const generatePlayerModel = ({ req }) => ({
-    authorizeUser: ({ token }) => {
-        let auth = authKeys.get(token);
-        return {
-            guild: auth ? auth.guild : '',
-            success: auth ? true : false
+    updatePlayerInfo: (player) => {
+        console.log('updating player info for', player);
+        let p = players.get(player.id);
+        if (!p) {
+            console.log('This is a new player');
         }
-    },
-    registerPlayer: ({ name, characterClass, token }) => {
-        let player = {
-            id: Math.floor(Math.random() * 100).toString(),
-            name: name,
-            characterClass: characterClass,
-            token: token,
-            guild: authKeys.get(token).guild
-        }
-        console.log(player);
         players.set(player.id, player);
-        return players.get(player.id);
+        return player;
     },
     getById: ({ id }) => players.get(id),
     getAll: () => Array.from(players.values()),
-    getRole: ({ id }) => {
+    startScouting: ({id, bossName, startTime }) => {
         let p = players.get(id);
-        console.log('Finding role for ', p);
-        let auth = authKeys.get(p.token);
-        return auth.role
+        p.scouting = bossName;
+        p.scoutingSince = startTime;
+        return p;
     },
-    startScouting: ({ name, bossName, startTime }) => {
+    startScoutingv1: ({ name, bossName, startTime }) => {
         console.log(name);
         let p = players.get(name);
         console.log('toggling scouting for p', p);
@@ -58,13 +47,11 @@ export const generatePlayerModel = ({ req }) => ({
     },
     getScouts: ({ name }) => {
         const allPlayers = Array.from(players.values());
-        console.log(allPlayers);
         let res = allPlayers.filter(p => {
             console.log(p.scouting);
             console.log(name);
             return p.scouting === name
         })
-        console.log(res);
         return res;
     },
 
