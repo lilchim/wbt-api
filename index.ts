@@ -24,11 +24,11 @@ const authKeys = new Map<string, any>();
 if(process.env.AUTH_KEYS) {
     console.log(process.env.AUTH_KEYS);
     process.env.AUTH_KEYS.split(',').forEach(key => {
-        console.log(key);
+        console.log('Checking auth key: ', key);
         let token = process.env[key];
         if(token) {
             const auth = jwt.verify(token, JWT_SECRET);
-            console.log(auth);
+            console.log('Verified auth: ',auth);
             authKeys.set(token, auth);
         }
     })
