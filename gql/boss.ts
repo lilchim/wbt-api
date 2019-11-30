@@ -5,7 +5,7 @@ import { WINDOW_DURATIONS_SECONDS } from '../settings';
 const typeDefs = gql`
     # Boss Type Definition
     type Boss {
-        id: ID
+        _id: ID
         name: String
         window: SpawnWindow
         lastKilled: Float
@@ -20,22 +20,23 @@ const typeDefs = gql`
     }
 
     extend type Query {
-        boss(name: String): Boss
+        boss(_id: ID): Boss
         bosses: [Boss]
     }
 
     extend type Mutation {
-        reportKill(name: String, killedOn: Float): Boss
+        reportKill(bossId: ID, spawnId: ID!, timeOfDeath: Float!): Boss
+        spawnBoss(bossId: ID, spawnTime: Float): Boss
     }
 `;
 
 const resolvers = {
     Query: {
         boss(_: any, args: any, context: any) {
-            return context.Bosses.getBoss(args.name);
+            return context.Bosses.getById(args._id);
         },
         bosses(_, args, context) {
-            return context.Bosses.getBosses();
+            return context.Bosses.getAll();
         }
     },
     Boss: {
@@ -48,10 +49,7 @@ const resolvers = {
             let lastKill = new Date(b.lastKilled * 1000);
             console.log('last killed: ', lastKill);
 
-            // let windowOpen = addHours(lastKill, 24)
-            // let windowCloses = addHours(windowOpen, 72);
-
-            let windowOpen = b.lastKilled + WINDOW_DURATIONS_SECONDS.windowOpen;
+            let windowOpen = b.lastKilled + WINDOW_DURATIONS_SECONDS.openAfterKill;
             let windowCloses = b.lastKilled + WINDOW_DURATIONS_SECONDS.windowDuration;
 
             console.log('window opens: ', windowOpen);
@@ -67,8 +65,14 @@ const resolvers = {
     Mutation: {
         reportKill(_: any, args: any, context: any) {
             console.log(`reporting kill`, args);
-            context.Bosses.reportKill(args);
-            return context.Bosses.getBoss(args.name);
+            let bossKill = context.Bosses.killBoss(args);
+            let log = context.SpawnLog.logKill(args);
+            return bossKill;
+        },
+        spawnBoss: async (_, args, context) => {
+            console.log(`spawning boss with id ${args.bossId}`)
+            let spawnedBoss = await context.Bosses.spawnBoss(args);
+            let log = context.SpawnLog.logSpawn(args);
         }
     }
 }
@@ -81,7 +85,7 @@ const useServerResetWindow = (boss, serverResetTimestamp) => {
     // let windowOpen = addHours(resetDate, 15);
     // let windowCloses = addHours(resetDate, 30);
 
-    let windowOpen = serverResetTimestamp + WINDOW_DURATIONS_SECONDS.serverResetOpen;
+    let windowOpen = serverResetTimestamp + WINDOW_DURATIONS_SECONDS.openAfterReset;
     let windowCloses = serverResetTimestamp + WINDOW_DURATIONS_SECONDS.serverResetDuration;
 
     console.log('window opens:', windowOpen);
