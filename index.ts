@@ -1,12 +1,17 @@
 import { ApolloServer, gql } from "apollo-server";
 import { schema as bossSchema } from './gql/boss'
-import { schema as playerSchema } from './gql/player';
 import { schema as serverSchema } from './gql/server';
 import { schema as authSchema } from './gql/auth';
-import { generateBossModel } from "./model/boss";
-import { generatePlayerModel } from './model/player';
+import { schema as characterSchema } from './gql/character';
+import { schema as scoutingSchema } from './gql/scouting';
+import { generateBossModel } from "./model/boss/boss";
 import { generateServerModel } from "./model/server";
 import { generateAuthModel } from "./model/auth";
+import { generateCharacterModel } from "./model/character";
+import { generateScoutingModel } from './model/scouting';
+
+import { BossConfiguration } from './model/boss/config';
+
 
 require('dotenv').config();
 
@@ -15,26 +20,24 @@ var jwt = require('jsonwebtoken');
 
 
 let officers;
-if(process.env.OFFICERS) {
+if (process.env.OFFICERS) {
     officers = process.env.OFFICERS.split(',');
 }
 console.log(officers);
 
 const authKeys = new Map<string, any>();
-if(process.env.AUTH_KEYS) {
-    console.log(process.env.AUTH_KEYS);
+if (process.env.AUTH_KEYS) {
+    console.log(`Configured Authentication Tokens: `, process.env.AUTH_KEYS);
     process.env.AUTH_KEYS.split(',').forEach(key => {
         console.log('Checking auth key: ', key);
         let token = process.env[key];
-        if(token) {
+        if (token) {
             const auth = jwt.verify(token, JWT_SECRET);
-            console.log('Verified auth: ',auth);
+            console.log('Verified auth: ', auth);
             authKeys.set(token, auth);
         }
     })
 }
-
-
 
 const typeDefs = [
     gql` 
@@ -46,29 +49,55 @@ const typeDefs = [
     }
     `,
     bossSchema.typeDefs,
-    playerSchema.typeDefs,
     serverSchema.typeDefs,
-    authSchema.typeDefs
+    authSchema.typeDefs,
+    characterSchema.typeDefs,
+    scoutingSchema.typeDefs
 ]
 
 const resolvers = [
     bossSchema.resolvers,
-    playerSchema.resolvers,
     serverSchema.resolvers,
-    authSchema.resolvers
+    authSchema.resolvers,
+    characterSchema.resolvers,
+    scoutingSchema.resolvers
 ]
 
 const registeredUsers = new Map<string, any>();
 
-const server = new ApolloServer( {
+import { MongoClient } from 'mongodb';
+import { connectClient, listDatabases } from './data-sources/mongodb/client';
+import { generateSpawnLogModel } from "./model/boss/spawn-log";
+let client: MongoClient 
+
+async function createMongoClient() {
+    const mongoConnectionString = process.env.MONGO_CONNECTION_STRING;
+    const mongoClientOptions = { useNewUrlParser: true, useUnifiedTopology: true };
+    client = await connectClient(mongoConnectionString, mongoClientOptions);
+    listDatabases(client);
+
+    // Load boss configuration
+    console.log('configuring bosses');
+    console.log(BossConfiguration.bosses);
+    BossConfiguration.bosses.forEach(boss => {
+        console.log(boss);
+        generateBossModel({req: undefined, client}).upsert(boss);
+    })
+}
+
+createMongoClient();
+
+const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({req}) => {
+    context: ({ req }) => {
         return {
-            Auth: generateAuthModel({req, officers, authKeys, registeredUsers}),
-            Server: generateServerModel({req}),
-            Bosses: generateBossModel({req}),
-            Players: generatePlayerModel({req})
+            Auth: generateAuthModel({ req, client, officers, authKeys, registeredUsers }),
+            Characters: generateCharacterModel({req, client}),
+            Server: generateServerModel({ req }),
+            Bosses: generateBossModel({ req, client }),
+            Scouting: generateScoutingModel({ req, client }),
+            SpawnLog: generateSpawnLogModel({ req, client })
         }
     }
 })
@@ -77,4 +106,4 @@ server.listen({
     port: process.env.PORT || 4000
 }).then(({ url }) => {
     console.log(`🚀 WBT Server running on ${url}`);
-  });
+});
