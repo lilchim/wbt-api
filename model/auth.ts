@@ -1,71 +1,70 @@
-import { Roles } from "../settings";
 import { v4 as uuidv4 } from 'uuid';
 
+export enum Roles {
+    OFFICER = 'OFFICER',
+    MEMBER = 'MEMBER'
+}
 
-export const generateAuthModel = ({req, officers, authKeys, registeredUsers}) => ({
-    getRegisteredUsers: () => { return Array.from(registeredUsers.values())},
-    getRole: ({token}) => { return authKeys.get(token).role },
-    isAuthorized: ({ name, token }) => {
-        console.log('Checking authorization for ', name);
+export interface User {
+    _id: string;
+    token: string;
+    name: string;
+    role: string;
+    organization: string;
+    discordTag?: string;
+    lastLogin: number;
+}
+
+export const generateAuthModel = ({ req, client, officers, authKeys, registeredUsers }) => ({
+    login: async ({ name, token, discordTag }) => { //check
+        console.log(`authorizing ${name} with token ${token}`)
         let auth = authKeys.get(token);
-        return auth && registeredUsers.has(name);
-    },
-    registerUser: ({name, token}) => {
-        let auth = authKeys.get(token);
-        
-        console.log(name, token);
-        if ( auth && registeredUsers.has(name)) {
-            console.log('This player is already registered');
-            return registeredUsers.get(name);
-        }
-        let result = {
-            id: uuidv4(),
-            token: token,
-            name: name,
-            role: auth.role,
-            guild: auth ? auth.guild : '',
-            success: auth ? true : false
-        }
-        console.log(result);
-        if(auth && auth.role === Roles.OFFICER) {
+        console.log(auth);
+
+        const existingUser = await client.db('wbt-data').collection('users').findOne({ name: name, token: token });
+        console.log(existingUser);
+        if (existingUser) return existingUser;
+
+        console.log(`${name} is a new user registering with token ${token}`);
+
+        if (auth && auth.role === Roles.OFFICER) {
             console.log('Officer role requires whitelist');
             if (officers.indexOf(name) < 0) {
-                result.success = false;
+                throw new Error('User is not authorized for this role');
             }
         }
 
-        if(result.success) {
-            registeredUsers.set(name, result);
+        // Create a new User
+        let user: User = {
+            _id: uuidv4(),
+            token: token,
+            name: name,
+            role: auth.role,
+            discordTag: discordTag ? discordTag : '',
+            organization: auth.guild,
+            lastLogin: Date.now()
         }
+
+        const result = await client.db('wbt-data').collection('users').insertOne(
+            user,
+        );
+
+        return user;
+
+    },
+    getById: async (id) => {
+        const result = await client.db('wbt-data').collection('users').findOne({_id: id});
         return result;
     },
-    // registerUserv1: ({ name, token }) => {
-    //     let auth = authKeys.get(token);
-        
-    //     let result = {
-    //         guild: auth ? auth.guild : '',
-    //         success: auth ? true : false
-    //     }
-    //     console.log(result);
-    //     if(auth && auth.role === Roles.OFFICER) {
-    //         console.log('Officer role requires whitelist');
-    //         if (officers.indexOf(name) < 0) {
-    //             result.success = false;
-    //         }
-    //     }
-
-    //     // add them to the list of players
-    //     if(result.success && !registeredUsers.has(name)) {
-    //         let id = uuidv4();
-    //         const player = {
-    //             id: id,
-    //             name: name,
-    //             token: token
-    //         }
-    //         players.set(player.id, player)
-    //         registeredUsers.set(name, player.id);
-    //     }
-
-    //     return result;
-    // },
+    getAll: async () => {
+        const result = await client.db('wbt-data').collection('users').find().toArray()
+        return result;
+    },
+    getRole: ({ token }) => { return authKeys.get(token).role },
+    getGuildByToken: ({ token }) => { return authKeys.get(token).guild},
+    isAuthorized: async ({ name, token }) => { //check
+        console.log(`verifying authorization for ${name} with token ${token}`)
+        let existingUser = await client.db('wbt-data').collection('users').findOne({ name: name, token: token });
+        return existingUser ? true : false;
+    },
 })

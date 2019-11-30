@@ -1,10 +1,18 @@
 import { gql } from "apollo-server";
 
 const typeDefs = gql`
-    extend type Player {
+
+    type User {
+        _id: ID
         authorized: Boolean
+        guild: String
+        name: String
         token: String
         role: ROLE
+    }
+
+    extend type Character {
+        owner: User
     }
 
     enum ROLE {
@@ -13,42 +21,47 @@ const typeDefs = gql`
     }
 
     input AuthInput {
-        name: String
-        token: String
+        name: String!
+        token: String!
+        discordTag: String
     }
 
     extend type Query {
-        registeredUsers: [Player]
+        users: [User]
     }
 
     extend type Mutation {
-        registerUser(auth: AuthInput): Player
+        login(auth: AuthInput): User
     }
 `;
 
 const resolvers = {
     Query: {
-        registeredUsers (_, args, context) {
-            return context.Auth.getRegisteredUsers();
-        }
+        users: async (_, args, context) => {
+            let result = await context.Auth.getAll();
+            console.log(result);
+            return result;
+        },
     },
     Mutation: {
-        registerUser (_, args, context) {
-            console.log('registering user', args);
-            let newPlayer = context.Auth.registerUser(args.auth);
-            console.log('new player!', newPlayer);
-            context.Players.updatePlayerInfo(newPlayer);
-            return newPlayer;
+        login (_, args, context) {
+            console.log('authorizing user', args);
+            return context.Auth.login(args.auth);
+        },
+    },
+    User: {
+        authorized: async (user, args, context) =>  {
+            console.log('checking auth for', user);
+            return context.Auth.isAuthorized(user);
+        },
+        guild: async (user, args, context) => {
+            return context.Auth.getGuildByToken(user);
         }
     },
-    Player: {
-        authorized (player, args, context) {
-            console.log('checking auth for', player);
-            return context.Auth.isAuthorized(player);
-        },
-        role (player, args, context) {
-            console.log(player);
-            return context.Auth.getRole(player);
+    Character: {
+        owner: async (character, args, context) => {
+            console.log(`getting ${character.name}'s owner: ${character.owner}`);
+            return context.Auth.getById(character.owner);
         }
     }
 };
