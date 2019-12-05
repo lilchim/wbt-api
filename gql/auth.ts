@@ -28,6 +28,7 @@ const typeDefs = gql`
 
     extend type Query {
         users: [User]
+        user(_id: ID): User
     }
 
     extend type Mutation {
@@ -42,11 +43,23 @@ const resolvers = {
             console.log(result);
             return result;
         },
+        user: async (_, args, context) => {
+            return context.Auth.getById(args._id);
+        }
     },
     Mutation: {
-        login (_, args, context) {
+        login: async (_, args, context) => {
             console.log('authorizing user', args);
-            return context.Auth.login(args.auth);
+            let authResult = await context.Auth.login(args.auth);
+            console.log('authorized user: ', authResult);
+            const mainCharacter = {
+                owner: authResult._id,
+                name: authResult.name,
+                guild: authResult.organization
+            }
+            console.log('Upserting main: ', mainCharacter);
+            let upsertCharacter = await context.Characters.upsertCharacter(mainCharacter);
+            return authResult;
         },
     },
     User: {
