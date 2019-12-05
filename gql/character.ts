@@ -56,7 +56,7 @@ const resolvers = {
     Character: {
     },
     Mutation: {
-        upsertCharacter(_, args, context) {
+        upsertCharacter: async (_, args, context) => {
             return context.Characters.upsertCharacter(args.character);
         },
     },

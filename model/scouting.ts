@@ -13,6 +13,7 @@ export interface ScoutingLog {
 const DEFAULT_SCOUT_TIME = 3600
 
 export const generateScoutingModel = ({ req, client }) => ({
+
     /**
      * Gets all scouting logs for a given boss
      * Accepts `since` and `until` parameters to filter based on startTime
@@ -96,11 +97,11 @@ export const generateScoutingModel = ({ req, client }) => ({
             )
             .sort({ startTime: -1 })
             .toArray();
-        console.log('current scouting sessions: ', currentSessions);
+        // console.log('current scouting sessions: ', currentSessions);
         const uniqueByScout = uniqBy(currentSessions, 'session.scoutId');
-        console.log('unique by scout', uniqueByScout);
+        // console.log('unique by scout', uniqueByScout);
         const activeScouts = uniqueByScout.map(log => log.scoutId);
-        console.log('active scouts: ', activeScouts);
+        // console.log('active scouts: ', activeScouts);
         return activeScouts;
     }
 
