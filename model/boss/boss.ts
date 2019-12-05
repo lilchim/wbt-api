@@ -1,13 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-export interface SpawnLog {
-    _id: any;
-    bossId: any;
-    spawnedAt: number;
-    killedAt?: number;
-}
-
 
 export interface Boss {
     _id: any;
@@ -26,24 +19,24 @@ export const generateBossModel = ({req, client}) => ({
     },
     spawnBoss: async ({bossId, spawnTime}) => { // check
         // Mark the boss as alive
-        let updateBoss = await client.db('wbt-data').collection('bosses').findOneAndUpdate(
+        let spawnedBoss = await client.db('wbt-data').collection('bosses').findOneAndUpdate(
             { _id: bossId },
             { $set: { alive: true } },
             { upsert: true }
         )
-        console.log('spawned boss: ', updateBoss.value);
+        console.log('spawned boss: ', spawnedBoss.value);
 
-        return updateBoss.value;
+        return spawnedBoss.value;
     },
-    killBoss: async ({_id, spawnId, timeOfDeath}) => { //check
-        let killBoss = await client.db('wbt-data').collection('bosses').findOneAndUpdate(
-            { _id: _id },
-            { $set: { alive: false, lastKilled: timeOfDeath  }},
+    killBoss: async ({bossId, timeOfDeath}) => { //check
+        let killedBoss = await client.db('wbt-data').collection('bosses').findOneAndUpdate(
+            { _id: bossId },
+            { $set: { alive: false, lastKilled: timeOfDeath, activeInstance: uuidv4()  }},
             { upsert: true }
         )
-        console.log(`Killed boss: ${JSON.stringify(killBoss.value)}`);
+        console.log(`Killed boss: ${JSON.stringify(killedBoss.value)}`);
 
-        return killBoss.value;
+        return killedBoss.value;
     },
     upsert: async (boss) => { //check
         console.log('updating boss', boss);

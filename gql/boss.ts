@@ -6,6 +6,7 @@ const typeDefs = gql`
     # Boss Type Definition
     type Boss {
         _id: ID
+        activeInstance: ID
         name: String
         window: SpawnWindow
         lastKilled: Float
@@ -25,8 +26,8 @@ const typeDefs = gql`
     }
 
     extend type Mutation {
-        reportKill(bossId: ID, spawnId: ID!, timeOfDeath: Float!): Boss
-        spawnBoss(bossId: ID, spawnTime: Float): Boss
+        reportKill(bossId: ID!, spawnId: ID!, timeOfDeath: Float): Boss
+        spawnBoss(bossId: ID!, spawnId: ID!, spawnTime: Float): Boss
     }
 `;
 
@@ -40,8 +41,21 @@ const resolvers = {
         }
     },
     Boss: {
-        window(boss: any, args: any, context: any) {
-            let b = context.Bosses.getBoss(boss.name);
+        alive: (boss) => {
+            if(boss.alive === undefined) return false;
+            return boss.alive;
+        },
+        lastKilled: (boss) => {
+            if(!boss.lastKilled) return 0;
+            return boss.lastKilled;
+        },
+        activeInstance: async (boss, args, context) => {
+            if(!boss.activeInstance) return -1;
+            return boss.activeInstance;
+        },
+        window: async (boss: any, args: any, context: any) => {
+            let b = await context.Bosses.getById(boss._id);
+            console.log('computing window for boss ', b);
             let serverResetUTC = context.Server.lastReset();
             if(serverResetUTC > b.lastKilled) {
                 return useServerResetWindow(b, serverResetUTC);
@@ -65,14 +79,16 @@ const resolvers = {
     Mutation: {
         reportKill(_: any, args: any, context: any) {
             console.log(`reporting kill`, args);
-            let bossKill = context.Bosses.killBoss(args);
+            let killedBoss = context.Bosses.killBoss(args);
+            console.log('reportKill returning ', JSON.stringify(killedBoss));
             let log = context.SpawnLog.logKill(args);
-            return bossKill;
+            return killedBoss;
         },
         spawnBoss: async (_, args, context) => {
             console.log(`spawning boss with id ${args.bossId}`)
             let spawnedBoss = await context.Bosses.spawnBoss(args);
             let log = context.SpawnLog.logSpawn(args);
+            return spawnedBoss;
         }
     }
 }
