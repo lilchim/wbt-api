@@ -8,6 +8,7 @@ const typeDefs = gql`
 
     type CharacterScouting {
         _id: ID
+        scout: Character
         target: Boss
         startTime: Float
         stopTime: Float
@@ -51,9 +52,7 @@ const resolvers = {
     },
     Boss: {
         scouts: async (boss, args, context) => {
-            console.log(`gql getting scouts for ${boss}`)
             let activeScouts = await context.Scouting.getActiveScoutsForTarget(boss)
-            console.log('found scouts', activeScouts);
             return activeScouts.map(scoutId => {
                 return context.Characters.getById(scoutId);
             })
@@ -70,6 +69,9 @@ const resolvers = {
     CharacterScouting: {
         target: async (scoutingSession, args, context) => {
             return context.Bosses.getById(scoutingSession.targetId);
+        },
+        scout: async (scoutingSession, args, context) => {
+            return context.Characters.getById(scoutingSession.scoutId);
         }
     }
 }
