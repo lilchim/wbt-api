@@ -18,30 +18,34 @@ export const generateCharacterModel = ({ req, client }) => ({
         console.log(result);
         return result;
     },
+    getByNameAndOwner: async ({ name, owner }) => {
+        let result = await client.db(dbName).collection(characterCollection).findOne(
+            {
+                owner: owner,
+                name: name
+            }
+        );
+        console.log('character.getByNameAndOwner found: ', result);
+        return result;
+    },
     getAll: () => {
         return client.db(dbName).collection(characterCollection).find().toArray();
     },
     upsertCharacter: async (character) => {
-        if (!character._id) {
-            console.log(`Request to create new character ${character.name}`);
-            character._id = uuidv4();
-        }
-        else {
-            console.log(`Updating existing character named ${character.name}`);
-        }
+        console.log('character.upsertCharacter upserting', character);
 
         let result = await client.db(dbName).collection(characterCollection)
             .findOneAndUpdate(
-                { _id: character._id },
+                { owner: character.owner, name: character.name},
                 { $set: { ...character } },
-                { upsert: true }
+                { upsert: true, returnOriginal: false }
             );
-        console.log(result);
-        return character;
+        console.log(`upserted character: `, result.value);
+        return result.value;
     },
-    getAllByOwner: ({_id}) => {
+    getAllByOwner: ({ _id }) => {
         return client.db(dbName).collection(characterCollection).find(
-            {owner: _id}
+            { owner: _id }
         ).toArray();
     },
     upsertMultipleCharacters: (characters) => {
